@@ -16,7 +16,7 @@ class Ship:
         self.TITLE_BAR_HEIGHT = 30  # Adjust this based on your window's title bar height
         self.WINDOW_LEFT_BORDER = 8  # tune for your Windows theme/DPI
 
-    def screenshot(self):
+    def screenshot(self, DEBUG=False):
         self.ftl_window.activate()  # Activate the FTL window
         # Capture the window content area excluding the title bar
         time.sleep(0.5)
@@ -26,6 +26,8 @@ class Ship:
             self.ftl_window.width - (2 * self.WINDOW_LEFT_BORDER),
             self.ftl_window.height - self.TITLE_BAR_HEIGHT
         ))
+        if DEBUG:
+            screenshot.save("debug_screenshot.png")
         return screenshot
 
     def mask_color(self, image, lower_bound, upper_bound):
@@ -55,7 +57,7 @@ class Ship:
         if DEBUG:
             bar_image.save("debug_bar_image.png")
             print(f"Bar region: {bar_region}")
-            input("Press Enter to continue...")
+            time.sleep(1)  # Pause to allow time to check the saved image
         
         mask = mask_function(bar_image)
         if DEBUG:
@@ -160,9 +162,9 @@ class PlayerShip(Ship):
 if __name__ == "__main__":
     print(gw.getAllTitles())
     player_ship = PlayerShip()
-    screenshot = player_ship.screenshot()
+    screenshot = player_ship.screenshot(DEBUG=True)
 
     shield = player_ship.detect_shield(screenshot)
     print(f"Shield: {shield}")
-    health = player_ship.detect_health(screenshot)
+    health = player_ship.detect_health(screenshot, DEBUG=True)
     print(f"Health: {health}")

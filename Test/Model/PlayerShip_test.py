@@ -19,7 +19,8 @@ class TestPlayerShip(unittest.TestCase):
         mock_get_windows.return_value = [mock_window]
 
         self.player_ship = PlayerShip()
-
+        self.player_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
+        self.player_ship.WINDOW_LEFT_BORDER = 0  # Set left border to 0 for testing
 
     @patch('Model.PlayerShip.pyautogui.screenshot')
     def test_screenshot(self, mock_screenshot):
@@ -32,25 +33,30 @@ class TestPlayerShip(unittest.TestCase):
     def test_detect_health(self):
         # Replace screenshot with a preset image TestImage1.jpg that has a known health bar state
         test_image = Image.open('Test/Model/TestImage1.jpg')
-        self.player_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
         
         health = self.player_ship.detect_health(test_image)
         # Assuming TestImage1.jpg has 25 hit points, we can assert that the detected health is correct
         self.assertEqual(health, 25)
 
     def test_detect_health_yellow(self):
-        # Replace screenshot with a preset image TestImage2.jpg that has a known health bar state with yellow pixels
+        # Replace screenshot with a preset image TestYellowBar. that has a known health bar state with yellow pixels
         test_image = Image.open('Test/Model/TestYellowBar.png')
-        self.player_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
         
         health = self.player_ship.detect_health(test_image)
         # Assuming TestYellowBar.png has 18 hit points, we can assert that the detected health is correct
         self.assertEqual(health, 18)
 
+    def test_detect_health_red(self):
+        # Replace screenshot with a preset image TestImage2.pngthat has a known health bar state with red pixels
+        test_image = Image.open('Test/Model/TestImage2.png')
+        
+        health = self.player_ship.detect_health(test_image)
+        # Assuming TestImage2.png has 6 hit points, we can assert that the detected health is correct
+        self.assertEqual(health, 6)
+
     def test_detect_shield(self):
         # Replace screenshot with a preset image TestImage1.jpg that has a known shield bar state
         test_image = Image.open('Test/Model/TestImage1.jpg')
-        self.player_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
         
         shield = self.player_ship.detect_shield(test_image)
         # Assuming TestImage1.jpg has 2 shield points, we can assert that the detected shield is correct
@@ -59,7 +65,6 @@ class TestPlayerShip(unittest.TestCase):
     def test_detect_shield_broken(self):
         # screenshot is the same as detect_health_yellow, which has a broken shield bar with 0 shield points
         test_image = Image.open('Test/Model/TestYellowBar.png')
-        self.player_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
         shield = self.player_ship.detect_shield(test_image)
         # Assuming TestYellowBar.png has 0 shield points, we can assert that the detected shield is correct
         self.assertEqual(shield, 0)
