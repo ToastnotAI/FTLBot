@@ -48,6 +48,7 @@ class TestPlayerShip(unittest.TestCase):
 
     def test_detect_health_red(self):
         # Replace screenshot with a preset image TestImage2.pngthat has a known health bar state with red pixels
+        # The border on test image 2 has flashed red, but should not be counted as a hit point
         test_image = Image.open('Test/Model/TestImage2.png')
         
         health = self.player_ship.detect_health(test_image)

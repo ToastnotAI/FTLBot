@@ -116,7 +116,7 @@ class Ship:
 class PlayerShip(Ship):
     def __init__(self):
         super().__init__()
-        self.HEALTH_BAR_REGION = (0, 34, 380, 5)  # Define the region of interest (ROI) for the health bar
+        self.HEALTH_BAR_REGION = (10, 34, 360, 5)  # Define the region of interest (ROI) for the health bar
         #ROI of shield bar is 30,50 to 130,80 with 30,50 being being top left corner and 130,80 being bottom right corner, so width is 100 and height is 30
         self.SHIELD_BAR_REGION = (30, 62, 100, 3)  # Define the region of interest (ROI) for the shield bar
 
