@@ -20,12 +20,14 @@ class TestPlayerShip(unittest.TestCase):
 
         self.player_ship = PlayerShip()
 
+
     @patch('Model.PlayerShip.pyautogui.screenshot')
     def test_screenshot(self, mock_screenshot):
         # Mock the screenshot function to return a dummy image
         mock_screenshot.return_value = "dummy_screenshot"
         screenshot = self.player_ship.screenshot()
         self.assertEqual(screenshot, "dummy_screenshot")
+
 
     def test_detect_health(self):
         # Replace screenshot with a preset image TestImage1.jpg that has a known health bar state

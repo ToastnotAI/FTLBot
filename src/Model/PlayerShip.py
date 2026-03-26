@@ -14,16 +14,17 @@ class Ship:
         self.ftl_window = gw.getWindowsWithTitle("FTL: Faster Than Light")[0]  # Get the FTL window
         self.screen_width, self.screen_height = self.ftl_window.width, self.ftl_window.height
         self.TITLE_BAR_HEIGHT = 30  # Adjust this based on your window's title bar height
+        self.WINDOW_LEFT_BORDER = 8  # tune for your Windows theme/DPI
 
     def screenshot(self):
         self.ftl_window.activate()  # Activate the FTL window
         # Capture the window content area excluding the title bar
         time.sleep(0.5)
         screenshot = pyautogui.screenshot(region=(
-            self.ftl_window.left, 
-            self.ftl_window.top + self.TITLE_BAR_HEIGHT,  # Start below title bar
-            self.ftl_window.width, 
-            self.ftl_window.height - self.TITLE_BAR_HEIGHT  # Reduce height by title bar
+            self.ftl_window.left + self.WINDOW_LEFT_BORDER,
+            self.ftl_window.top + self.TITLE_BAR_HEIGHT,
+            self.ftl_window.width - (2 * self.WINDOW_LEFT_BORDER),
+            self.ftl_window.height - self.TITLE_BAR_HEIGHT
         ))
         return screenshot
 
