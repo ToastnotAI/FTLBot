@@ -37,6 +37,7 @@ class TestPlayerShip(unittest.TestCase):
         health = self.player_ship.detect_health(test_image)
         # Assuming TestImage1.jpg has 25 hit points, we can assert that the detected health is correct
         self.assertEqual(health, 25)
+        self.assertEqual(self.player_ship.health, 25)
 
     def test_detect_health_yellow(self):
         # Replace screenshot with a preset image TestYellowBar. that has a known health bar state with yellow pixels
@@ -45,6 +46,7 @@ class TestPlayerShip(unittest.TestCase):
         health = self.player_ship.detect_health(test_image)
         # Assuming TestYellowBar.png has 18 hit points, we can assert that the detected health is correct
         self.assertEqual(health, 18)
+        self.assertEqual(self.player_ship.health, 18)
 
     def test_detect_health_red(self):
         # Replace screenshot with a preset image TestImage2.pngthat has a known health bar state with red pixels
@@ -54,6 +56,7 @@ class TestPlayerShip(unittest.TestCase):
         health = self.player_ship.detect_health(test_image)
         # Assuming TestImage2.png has 6 hit points, we can assert that the detected health is correct
         self.assertEqual(health, 6)
+        self.assertEqual(self.player_ship.health, 6)
 
     def test_detect_shield(self):
         # Replace screenshot with a preset image TestImage1.jpg that has a known shield bar state
@@ -62,6 +65,7 @@ class TestPlayerShip(unittest.TestCase):
         shield = self.player_ship.detect_shield(test_image)
         # Assuming TestImage1.jpg has 2 shield points, we can assert that the detected shield is correct
         self.assertEqual(shield, 2)
+        self.assertEqual(self.player_ship.shield, 2)
         
     def test_detect_shield_broken(self):
         # screenshot is the same as detect_health_yellow, which has a broken shield bar with 0 shield points
@@ -69,3 +73,4 @@ class TestPlayerShip(unittest.TestCase):
         shield = self.player_ship.detect_shield(test_image)
         # Assuming TestYellowBar.png has 0 shield points, we can assert that the detected shield is correct
         self.assertEqual(shield, 0)
+        self.assertEqual(self.player_ship.shield, 0)
