@@ -19,11 +19,37 @@ class System():
         self.damage = 0
 
     def send_damage(self, damage):
-        self.damage += 1
+        self.damage += damage
 
     def is_destroyed(self):
         return self.damage >= 3
 
+
+class Weapon():
+    def __init__(self, name, pos, damage, base_cooldown, shots_per_burst = 1, shield_pen = 0, is_beam = False, is_enabled = True):
+        self.name = name
+        self.pos = pos
+        self.damage = damage
+        self.base_cooldown = base_cooldown
+        self.shots_per_burst = shots_per_burst
+        self.shield_pen = shield_pen
+        self.is_beam = is_beam
+        self.is_enabled = is_enabled
+        self.last_fired = 0
+
+    def can_fire(self, cooldown_multiplier = 1):
+        current_time = time.time()
+        return ((current_time - self.last_fired) >= (self.base_cooldown * cooldown_multiplier)) and self.is_enabled
+    
+    def toggle_enabled(self):
+        self.is_enabled = not self.is_enabled
+        if self.is_enabled:
+            # When enabled the weapon needs to charge before it can fire, so we set last_fired to the current time to enforce the cooldown
+            self.last_fired = time.time()
+
+    
+    
+    
 
 class PlayerShip(Ship):
     def __init__(self):
@@ -35,6 +61,8 @@ class PlayerShip(Ship):
         self.ROOM_REGION = (110, 110, 740, 510)  # Define the region of interest (ROI) for the rooms
 
         self.systems = []
+
+        self.weapons = []
 
     def health_mask(self, health_bar_image):
         # Define the lower and upper bounds for the green color in HSV
@@ -101,8 +129,14 @@ class PlayerShip(Ship):
 
         return rooms
 
-
-    
+    def detect_weapons(self, screenshot, DEBUG=False):
+        # For this version all weapons will be hardcoded
+        weapons = [
+            Weapon("Artemis Missile", [300,650], 2, 11, 1, 5),
+            Weapon("Burst Laser Mk II", [400,650], 1, 12, 3)
+        ]
+        self.weapons = weapons
+        return weapons
 
 
 
