@@ -54,13 +54,24 @@ class Ship:
         mask = cv2.inRange(image_array, lower_bound, upper_bound)
         return mask
 
-    def health_mask(self, mask):
-        # This method should be implemented by subclasses to return a mask of the health bar based on the specific colors used in the game
-        raise NotImplementedError("Subclasses must implement health_mask method")
+    def health_mask(self, health_bar_image):
+        # Define the lower and upper bounds for the green color in HSV
+        lower_green = np.array([50, 100, 100]) 
+        upper_green = np.array([70, 255, 255])  
 
-    def shield_mask(self, mask):
-        # This method should be implemented by subclasses to return a mask of the shield bar based on the specific colors used in the game
-        raise NotImplementedError("Subclasses must implement shield_mask method")
+        mask = self.mask_color(health_bar_image, lower_green, upper_green)
+
+        return mask
+
+    def shield_mask(self, shield_bar_image):
+        # shield mask will be same as player ship, as the colour of the shield bar is the same for both player and enemy ships
+        lower_blue = np.array([100, 100, 100])
+        upper_blue = np.array([130, 255, 255])
+
+        mask = self.mask_color(shield_bar_image, lower_blue, upper_blue)
+
+        return mask
+
 
     def room_mask(self, enemy_ship_image, DEBUG=False):
         # Ship interiors can be white/black/grey depending on vision and lighting.

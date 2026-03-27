@@ -68,11 +68,8 @@ class PlayerShip(Ship):
         self.weapons = []
 
     def health_mask(self, health_bar_image):
-        # Define the lower and upper bounds for the green color in HSV
-        lower_green = np.array([50, 100, 100])  # Adjust these values based on the actual color
-        upper_green = np.array([70, 255, 255])  # Adjust these
 
-        mask = self.mask_color(health_bar_image, lower_green, upper_green)
+        mask = super().health_mask(health_bar_image)
 
         # There are 3 possible colours for the health bar, all must be checked
         if np.sum(mask) == 0:
@@ -85,18 +82,6 @@ class PlayerShip(Ship):
                 mask = self.mask_color(health_bar_image, lower_red, upper_red)
                 if np.sum(mask) == 0:
                     return 0  # No health detected 
-        return mask
-
-    def shield_mask(self, shield_bar_image):
-        # Define the lower and upper bounds for the blue color in HSV
-        lower_blue = np.array([100, 100, 100]) 
-        upper_blue = np.array([130, 255, 255])  
-
-        mask = self.mask_color(shield_bar_image, lower_blue, upper_blue)
-
-        if np.sum(mask) == 0:
-            #return 0  # No shield detected 
-            pass
         return mask
 
     def _point_in_room(self, point, polygon):
