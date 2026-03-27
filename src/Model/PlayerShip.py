@@ -10,6 +10,21 @@ else:
     from Ship import Ship
 
 
+class System():
+
+    def __init__(self, name):
+        self.name = name
+        self.pos = [0, 0]
+        self.shape = None
+        self.damage = 0
+
+    def send_damage(self, damage):
+        self.damage += 1
+
+    def is_destroyed(self):
+        return self.damage >= 3
+
+
 class PlayerShip(Ship):
     def __init__(self):
         super().__init__()
@@ -19,6 +34,7 @@ class PlayerShip(Ship):
         # ROI for rooms is 110, 110 to 850, 620
         self.ROOM_REGION = (110, 110, 740, 510)  # Define the region of interest (ROI) for the rooms
 
+        self.systems = []
 
     def health_mask(self, health_bar_image):
         # Define the lower and upper bounds for the green color in HSV
@@ -51,6 +67,39 @@ class PlayerShip(Ship):
             #return 0  # No shield detected 
             pass
         return mask
+
+    def _point_in_room(self, point, polygon):
+        x1, y1 = point
+        x2, y2, xoffset, yoffset = polygon
+
+        if (x1 >= x2 and x1 <= x2 + xoffset) and (y1 >= y2 and y1 <= y2 + yoffset):
+            return True
+        else:
+            return False
+
+    def detect_rooms(self, screenshot, DEBUG=False):
+        rooms = super().detect_rooms(screenshot, DEBUG)
+        print("Rooms:", rooms)
+        system_names = [[[380,350],"Weapons"], [[270,350],"Engines"], [[265,300],"Oxygen"], [[510,320],"Medbay"], [[700,345],"Piloting"], [[510,380],"Shields"], [[585,365],"Sensors"], [[585,330],"Doors"]]
+        for room in rooms:
+            for system in system_names:
+
+                if self._point_in_room(system[0], room):
+                    print(f"System {system[1]} is in room {room}")
+                    self.systems.append(System(system[1]))
+                    self.systems[-1].pos = system[0]
+                    self.systems[-1].shape = room
+
+        if DEBUG:
+            # OpenCV drawing functions require a numpy image, not a PIL image.
+            debug_image = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+            # draw circles on screen for each system that is detected
+            for system in self.systems:
+                cv2.circle(debug_image, tuple(system.pos), 5, (0, 255, 0), -1)
+            cv2.imshow("Rooms with Systems", debug_image)
+            cv2.waitKey(0)
+
+        return rooms
 
 
     
