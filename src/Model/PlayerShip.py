@@ -4,59 +4,19 @@ import pygetwindow as gw
 import cv2
 import time
 
-if __name__ != "__main__":
+try:
     from .Ship import Ship
-else:
+    from .Systems import System, Weapon, Reactor
+except ImportError:
     from Ship import Ship
-
-
-class System():
-
-    def __init__(self, name):
-        self.name = name
-        self.pos = [0, 0]
-        self.shape = None
-        self.damage = 0
-
-    def send_damage(self, damage):
-        self.damage += damage
-
-    def is_destroyed(self):
-        return self.damage >= 3
-
-
-class Weapon():
-    def __init__(self, name, pos, damage, base_cooldown, shots_per_burst = 1, shield_pen = 0, is_beam = False, is_enabled = True):
-        self.name = name
-        self.pos = pos
-        self.damage = damage
-        self.base_cooldown = base_cooldown
-        self.shots_per_burst = shots_per_burst
-        self.shield_pen = shield_pen
-        self.is_beam = is_beam
-        self.is_enabled = is_enabled
-        self.last_fired = 0
-
-    def can_fire(self, cooldown_multiplier = 1):
-        current_time = time.time()
-        return ((current_time - self.last_fired) >= (self.base_cooldown * cooldown_multiplier)) and self.is_enabled
-
-    def fired(self):
-        self.last_fired = time.time()
-    
-    def toggle_enabled(self):
-        self.is_enabled = not self.is_enabled
-        if self.is_enabled:
-            # When enabled the weapon needs to charge before it can fire, so we set last_fired to the current time to enforce the cooldown
-            self.last_fired = time.time()
-
-    
-    
+    from Systems import System, Weapon, Reactor
     
 
 class PlayerShip(Ship):
     def __init__(self):
         super().__init__()
+        DEFAULT_REACTOR_POWER = 8
+
         self.HEALTH_BAR_REGION = (10, 34, 360, 5)  # Define the region of interest (ROI) for the health bar
         #ROI of shield bar is 30,50 to 130,80 with 30,50 being being top left corner and 130,80 being bottom right corner, so width is 100 and height is 30
         self.SHIELD_BAR_REGION = (30, 62, 100, 3)  # Define the region of interest (ROI) for the shield bar
@@ -66,6 +26,8 @@ class PlayerShip(Ship):
         self.systems = []
 
         self.weapons = []
+
+        self.reactor = Reactor(DEFAULT_REACTOR_POWER)
 
     def health_mask(self, health_bar_image):
 
@@ -96,15 +58,16 @@ class PlayerShip(Ship):
     def detect_rooms(self, screenshot, DEBUG=False):
         rooms = super().detect_rooms(screenshot, DEBUG)
         print("Rooms:", rooms)
-        system_names = [[[380,350],"Weapons"], [[270,350],"Engines"], [[265,300],"Oxygen"], [[510,320],"Medbay"], [[700,345],"Piloting"], [[510,380],"Shields"], [[585,365],"Sensors"], [[585,330],"Doors"]]
+        system_names = [[[380,350],"Weapons", [235, 680]], [[270,350],"Engines", [120, 680]], [[265,300],"Oxygen", [200, 680]], [[510,320],"Medbay", [165, 680]], [[700,345],"Piloting"], [[510,380],"Shields", [90, 680]], [[585,365],"Sensors"], [[585,330],"Doors"]]
         for room in rooms:
             for system in system_names:
 
                 if self._point_in_room(system[0], room):
                     print(f"System {system[1]} is in room {room}")
-                    self.systems.append(System(system[1]))
-                    self.systems[-1].pos = system[0]
-                    self.systems[-1].shape = room
+                    if len(system) == 3:
+                        self.systems.append(System(system[1], room, 0, system[0], system[2]))
+                    else:
+                        self.systems.append(System(system[1], room, 0, system[0]))
 
         if DEBUG:
             # OpenCV drawing functions require a numpy image, not a PIL image.
@@ -112,6 +75,10 @@ class PlayerShip(Ship):
             # draw circles on screen for each system that is detected
             for system in self.systems:
                 cv2.circle(debug_image, tuple(system.pos), 5, (0, 255, 0), -1)
+                if system.uipos:
+                    cv2.circle(debug_image, tuple(system.uipos), 5, (255, 0, 0), -1)
+                    #draw a line between the system position and the ui position
+                    cv2.line(debug_image, tuple(system.pos), tuple(system.uipos), (255, 0, 0), 1)
             cv2.imshow("Rooms with Systems", debug_image)
             cv2.waitKey(0)
 
@@ -126,6 +93,11 @@ class PlayerShip(Ship):
         self.weapons = weapons
         return weapons
 
+    def detect_system_power(self, screenshot, DEBUG=False):
+        for system in self.systems:
+            if system.uipos:
+                system.power = system.get_power(screenshot, DEBUG=DEBUG)
+                print(f"{system.name} power: {system.power}")
 
 
 
@@ -138,5 +110,9 @@ if __name__ == "__main__":
     print(f"Shield: {shield}")
     health = player_ship.detect_health(screenshot)
     print(f"Health: {health}")
-    rooms = player_ship.detect_rooms(screenshot, DEBUG=True)
+    rooms = player_ship.detect_rooms(screenshot)
     print(f"Rooms: {rooms}")
+    player_ship.detect_system_power(screenshot)
+    print(f"Systems: {[(system.name, system.power) for system in player_ship.systems]}")
+    player_ship.reactor.refresh_power(screenshot)
+    print(f"Reactor power: {player_ship.reactor.available_power}")

@@ -4,9 +4,9 @@ import pygetwindow as gw
 import cv2
 import time
 
-if __name__ != "__main__":
+try:
     from .Ship import Ship
-else:
+except ImportError:
     from Ship import Ship
 
 class EnemyShip(Ship):
