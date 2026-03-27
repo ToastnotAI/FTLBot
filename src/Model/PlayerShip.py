@@ -16,6 +16,8 @@ class PlayerShip(Ship):
         self.HEALTH_BAR_REGION = (10, 34, 360, 5)  # Define the region of interest (ROI) for the health bar
         #ROI of shield bar is 30,50 to 130,80 with 30,50 being being top left corner and 130,80 being bottom right corner, so width is 100 and height is 30
         self.SHIELD_BAR_REGION = (30, 62, 100, 3)  # Define the region of interest (ROI) for the shield bar
+        # ROI for rooms is 110, 110 to 850, 620
+        self.ROOM_REGION = (110, 110, 740, 510)  # Define the region of interest (ROI) for the rooms
 
 
     def health_mask(self, health_bar_image):
@@ -59,9 +61,11 @@ class PlayerShip(Ship):
 if __name__ == "__main__":
     print(gw.getAllTitles())
     player_ship = PlayerShip()
-    screenshot = player_ship.screenshot(DEBUG=True)
+    screenshot = player_ship.screenshot()
 
     shield = player_ship.detect_shield(screenshot)
     print(f"Shield: {shield}")
-    health = player_ship.detect_health(screenshot, DEBUG=True)
+    health = player_ship.detect_health(screenshot)
     print(f"Health: {health}")
+    rooms = player_ship.detect_rooms(screenshot, DEBUG=True)
+    print(f"Rooms: {rooms}")
