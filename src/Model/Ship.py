@@ -85,8 +85,12 @@ class Ship(Masker):
     def detect_rooms(self, screenshot, DEBUG=False):
         mask = self.mask_region(screenshot, mask_function=self.room_mask, bar_region=self.ROOM_REGION, DEBUG=DEBUG)
         # Bridge thin gaps caused by interior line artifacts so one room is not split into many.
-        close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        room_mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, close_kernel, iterations=2)
+        # This is not necessary on images at or below the base resolution since the rooms are already merged at that scale, but helps maintain consistency across scales and fixtures.
+        if self.scale_x > 1 or self.scale_y > 1:
+            close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+            room_mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, close_kernel, iterations=2)
+        else:
+            room_mask = mask
         if DEBUG:
             cv2.imshow("debug_room_mask.png", room_mask)
             cv2.waitKey(0)

@@ -90,6 +90,13 @@ class TestPlayerShip(unittest.TestCase):
         self.assertTrue(x <= 20 and y <= 20)
         self.assertTrue(w >= 155 and h >= 155)
 
+    def test_detect_rooms_detects_correct_amount_of_rooms(self):
+        test_image = Image.open('Test/Model/TestYellowBar.png')
+        rooms = self.player_ship.detect_rooms(test_image, DEBUG=True)
+        # Assuming TestYellowBar.png has 19 rooms, we can assert that the detected rooms are correct
+        self.assertEqual(len(rooms), 19)
+
+
 
 class TestPlayerShipResizedWindow(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
@@ -131,4 +138,10 @@ class TestPlayerShipResizedWindow(unittest.TestCase):
         shield = self.player_ship.detect_shield(self.test_image)
         self.assertEqual(shield, 1)
         self.assertEqual(self.player_ship.shield, 1)
+
+    def test_detect_rooms_detects_correct_amount_of_rooms_in_resized_fixture(self):
+        test_image = self.test_image
+        rooms = self.player_ship.detect_rooms(test_image)
+        # Assuming the resized fixture has 17 rooms, we can assert that the detected rooms are correct
+        self.assertEqual(len(rooms), 17)
 
