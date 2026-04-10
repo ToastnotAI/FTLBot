@@ -11,6 +11,8 @@ from Model.PlayerShip import PlayerShip
 from Model.Systems import System, Weapon, Reactor
 
 RESIZED_FIXTURE = 'Test/Model/TestResizedWindow.png'
+RESIZED_TEST_TITLE_BAR = 45
+RESIZED_TEST_LEFT_BORDER = 8
 
 class TestPlayerShipWeapons(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
@@ -76,22 +78,34 @@ class TestSystemPowerResizedWindow(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
     @patch('Model.PlayerShip.gw.getWindowsWithTitle')
     def setUp(self, mock_get_windows, mock_screenshot):
+        with Image.open(RESIZED_FIXTURE) as fixture_image:
+            self.fixture_image = fixture_image.copy()
+        fixture_width, fixture_height = self.fixture_image.size
+
         mock_window = MagicMock()
-        mock_window.width = 1850
-        mock_window.height = 1087
+        mock_window.width = fixture_width
+        mock_window.height = fixture_height
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
 
+        def _mock_capture(region=None):
+            if region is None:
+                return self.fixture_image.copy()
+            left, top, width, height = region
+            return self.fixture_image.crop((left, top, left + width, top + height))
+
+        mock_screenshot.side_effect = _mock_capture
+
         self.player_ship = PlayerShip()
-        self.player_ship.TITLE_BAR_HEIGHT = 0
-        self.player_ship.WINDOW_LEFT_BORDER = 0
+        self.player_ship.TITLE_BAR_HEIGHT = RESIZED_TEST_TITLE_BAR
+        self.player_ship.WINDOW_LEFT_BORDER = RESIZED_TEST_LEFT_BORDER
+        self.test_image = self.player_ship.screenshot()
 
     def test_detect_system_power_resized_fixture(self):
-        test_image = Image.open(RESIZED_FIXTURE)
 
-        self.player_ship.detect_rooms(test_image)
-        self.player_ship.detect_system_power(test_image)
+        self.player_ship.detect_rooms(self.test_image)
+        self.player_ship.detect_system_power(self.test_image)
 
         power_by_name = {
             system.name: system.power

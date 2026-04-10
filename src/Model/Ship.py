@@ -37,7 +37,9 @@ class Ship(Masker):
 
     def detect_health(self, screenshot, DEBUG=False):
         mask = self.mask_region(screenshot, mask_function=self.health_mask, bar_region=self.HEALTH_BAR_REGION, DEBUG=DEBUG)
-        similar_pixels = np.where(mask > 0)
+        if not isinstance(mask, np.ndarray):
+            self.health = 0
+            return 0
         # return the number of pixel groups separated by gaps of one or more pixels horizontally, which corresponds to the number of hit points
         health = 0
         state = 0
@@ -56,37 +58,42 @@ class Ship(Masker):
 
     def detect_shield(self, screenshot, DEBUG=False):
         mask = self.mask_region(screenshot, mask_function=self.shield_mask, bar_region=self.SHIELD_BAR_REGION, DEBUG=DEBUG)
-        # save debug image of the shield mask
+
         if DEBUG:
             cv2.imwrite("debug_shield_mask.png", mask)
 
+        # Count shield pips as connected blue blobs so x-position shifts between
+        # different window scales/fixtures do not affect detection.
+        binary_mask = (mask > 0).astype(np.uint8)
+        num_labels, _, stats, _ = cv2.connectedComponentsWithStats(binary_mask, connectivity=8)
+
         shield = 0
-        state = 0
-        for col in range(mask.shape[1]):
-            if state == 0:
-                if mask[0, col] > 0:  # Found blue pixel
-                    first_blue_col = col
-                    state = 1
-            elif state == 1:
-                if mask[0, col] == 0:  # Found non-blue pixel after blue
-                    if col - first_blue_col > 8:  # If the gap is more than 3 pixels, we consider it a new shield point
-                        shield += 1
-                        state = 0
-                    else:
-                        state = 0
+        for label in range(1, num_labels):
+            width = stats[label, cv2.CC_STAT_WIDTH]
+            height = stats[label, cv2.CC_STAT_HEIGHT]
+            area = stats[label, cv2.CC_STAT_AREA]
+            box_area = max(1, width * height)
+            fill_ratio = area / box_area
+
+            # Keep dense, pip-like blobs and reject sparse ring/noise artifacts.
+            if width >= 3 and height >= 3 and area >= 30 and fill_ratio >= 0.65:
+                shield += 1
                 
         self.shield = shield
         return shield
 
     def detect_rooms(self, screenshot, DEBUG=False):
         mask = self.mask_region(screenshot, mask_function=self.room_mask, bar_region=self.ROOM_REGION, DEBUG=DEBUG)
+        # Bridge thin gaps caused by interior line artifacts so one room is not split into many.
+        close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        room_mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, close_kernel, iterations=2)
         if DEBUG:
-            cv2.imshow("debug_room_mask.png", mask)
+            cv2.imshow("debug_room_mask.png", room_mask)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 
                 # Locate rectangles in the mask which correspond to rooms, using contours
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(room_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         rooms = []
         if DEBUG:
             debug_image = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)

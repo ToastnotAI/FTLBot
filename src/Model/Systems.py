@@ -12,6 +12,7 @@ except ImportError:
 class System(Masker):
 
     def __init__(self, name, shape, max_power, pos, uipos = None):
+        super().__init__()
         self.name = name
         self.pos = pos
         self.uipos = uipos
@@ -35,17 +36,23 @@ class System(Masker):
         return mask
 
     def get_power(self, screenshot, DEBUG=False):
-        mask = self.mask_region(screenshot, mask_function=self.power_mask, bar_region=(self.uipos[0], 550, 1, 120), DEBUG=DEBUG)
+        scale_y = screenshot.height / 720
+        top = int(550 * scale_y)
+        height = max(1, int(120 * scale_y))
+        # uipos is already in screenshot coordinates, so do not rescale it again.
+        bar_region = (int(self.uipos[0]), top, 3, height)
+        mask = self.mask_region(screenshot, mask_function=self.power_mask, bar_region=bar_region, DEBUG=DEBUG)
         # count groups of green pixels
         power = 0
         state = 0
         for row in range(mask.shape[0]):
+            row_has_green = np.any(mask[row, :] > 0)
             if state == 0:
-                if mask[row, 0] > 0:  # Found green pixel
+                if row_has_green:
                     power += 1
                     state = 1
             else:
-                if mask[row, 0] == 0:  # Found non-green pixel after green
+                if not row_has_green:
                     state = 0
         return power
 
@@ -82,10 +89,13 @@ class Weapon():
 class Reactor(Masker):
 
     # Power bar region from 25, 500 to 25, 700
-    POWER_BAR_REGION = (25, 500, 1, 200)
+    POWER_BAR_REGION = None
     def __init__(self, max_power):
+        super().__init__()
         self.max_power = max_power
         self.available_power = max_power
+        # Recompute per instance so tests with different window scales do not reuse stale ROI values.
+        self.POWER_BAR_REGION = self.rescale_region((25, 500, 3, 200))
 
     def power_mask(self, power_bar_image):
         # Define lower and upper bounds for green in HSV
@@ -100,11 +110,12 @@ class Reactor(Masker):
         power = 0
         state = 0
         for row in range(mask.shape[0]):
+            row_has_green = np.any(mask[row, :] > 0)
             if state == 0:
-                if mask[row, 0] > 0:  # Found green pixel
+                if row_has_green:
                     power += 1
                     state = 1
             else:
-                if mask[row, 0] == 0:  # Found non-green pixel after green
+                if not row_has_green:
                     state = 0
         self.available_power = power

@@ -7,6 +7,8 @@ from unittest.mock import patch, MagicMock
 from PIL import Image
 
 RESIZED_FIXTURE = 'Test/Model/TestResizedWindow.png'
+RESIZED_TEST_TITLE_BAR = 45
+RESIZED_TEST_LEFT_BORDER = 8
 
 class TestEnemyShip(unittest.TestCase):
     @patch('Model.EnemyShip.pyautogui.screenshot')
@@ -34,7 +36,7 @@ class TestEnemyShip(unittest.TestCase):
 
     def test_detect_shield(self):
         test_image = Image.open('Test/Model/TestImage2.png')
-        shield = self.enemy_ship.detect_shield(test_image)
+        shield = self.enemy_ship.detect_shield(test_image, DEBUG=True)
         # Assuming TestImage2.png has 3 shield points for the enemy ship, we can assert that the detected shield is correct
         self.assertEqual(shield, 3)
         self.assertEqual(self.enemy_ship.shield, 3)
@@ -51,26 +53,37 @@ class TestEnemyShipResizedWindow(unittest.TestCase):
     @patch('Model.EnemyShip.pyautogui.screenshot')
     @patch('Model.EnemyShip.gw.getWindowsWithTitle')
     def setUp(self, mock_get_windows, mock_screenshot):
-        # Mock resized FTL window to validate scaled-coordinate test fixtures.
+        # Use the resized fixture dimensions as the mocked window geometry.
+        with Image.open(RESIZED_FIXTURE) as fixture_image:
+            self.fixture_image = fixture_image.copy()
+        fixture_width, fixture_height = self.fixture_image.size
+
         mock_window = MagicMock()
-        mock_window.width = 1850
-        mock_window.height = 1087
+        mock_window.width = fixture_width
+        mock_window.height = fixture_height
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
 
+        def _mock_capture(region=None):
+            if region is None:
+                return self.fixture_image.copy()
+            left, top, width, height = region
+            return self.fixture_image.crop((left, top, left + width, top + height))
+
+        mock_screenshot.side_effect = _mock_capture
+
         self.enemy_ship = EnemyShip()
-        self.enemy_ship.TITLE_BAR_HEIGHT = 0
-        self.enemy_ship.WINDOW_LEFT_BORDER = 0
+        self.enemy_ship.TITLE_BAR_HEIGHT = RESIZED_TEST_TITLE_BAR
+        self.enemy_ship.WINDOW_LEFT_BORDER = RESIZED_TEST_LEFT_BORDER
+        self.test_image = self.enemy_ship.screenshot()
 
     def test_detect_health_resized_fixture(self):
-        test_image = Image.open(RESIZED_FIXTURE)
-        health = self.enemy_ship.detect_health(test_image)
+        health = self.enemy_ship.detect_health(self.test_image)
         self.assertEqual(health, 10)
         self.assertEqual(self.enemy_ship.health, 10)
 
     def test_detect_shield_resized_fixture(self):
-        test_image = Image.open(RESIZED_FIXTURE)
-        shield = self.enemy_ship.detect_shield(test_image)
+        shield = self.enemy_ship.detect_shield(self.test_image)
         self.assertEqual(shield, 1)
         self.assertEqual(self.enemy_ship.shield, 1)

@@ -17,17 +17,22 @@ class PlayerShip(Ship):
         super().__init__()
         DEFAULT_REACTOR_POWER = 8
 
-        self.HEALTH_BAR_REGION = (10, 34, 360, 5)  # Define the region of interest (ROI) for the health bar
-        #ROI of shield bar is 30,50 to 130,80 with 30,50 being being top left corner and 130,80 being bottom right corner, so width is 100 and height is 30
-        self.SHIELD_BAR_REGION = (30, 62, 100, 3)  # Define the region of interest (ROI) for the shield bar
-        # ROI for rooms is 110, 110 to 850, 620
-        self.ROOM_REGION = (110, 110, 740, 510)  # Define the region of interest (ROI) for the rooms
+        self.refresh_scale_factors()
+        self._health_bar_base_region = (10, 39, 360, 5)
+        self._shield_bar_base_region = (30, 67, 100, 5)
+        self._room_base_region = (110, 115, 740, 510)
+        self.refresh_regions()
 
         self.systems = []
 
         self.weapons = []
 
         self.reactor = Reactor(DEFAULT_REACTOR_POWER)
+
+    def refresh_regions(self):
+        self.HEALTH_BAR_REGION = self.rescale_region(self._health_bar_base_region)
+        self.SHIELD_BAR_REGION = self.rescale_region(self._shield_bar_base_region)
+        self.ROOM_REGION = self.rescale_region(self._room_base_region)
 
     def health_mask(self, health_bar_image):
 
@@ -43,7 +48,8 @@ class PlayerShip(Ship):
                 upper_red = np.array([10, 255, 255])  # Adjust these
                 mask = self.mask_color(health_bar_image, lower_red, upper_red)
                 if np.sum(mask) == 0:
-                    return 0  # No health detected 
+                    # Keep return type consistent with cv2 masks to avoid scalar-shape crashes.
+                    return np.zeros((health_bar_image.height, health_bar_image.width), dtype=np.uint8)
         return mask
 
     def _point_in_room(self, point, polygon):
@@ -58,16 +64,30 @@ class PlayerShip(Ship):
     def detect_rooms(self, screenshot, DEBUG=False):
         rooms = super().detect_rooms(screenshot, DEBUG)
         print("Rooms:", rooms)
-        system_names = [[[380,350],"Weapons", [235, 680]], [[270,350],"Engines", [120, 680]], [[265,300],"Oxygen", [200, 680]], [[510,320],"Medbay", [165, 680]], [[700,345],"Piloting"], [[510,380],"Shields", [90, 680]], [[585,365],"Sensors"], [[585,330],"Doors"]]
+        # Scale system anchors from base 1280x720 using the actual screenshot size.
+        screenshot_width, screenshot_height = screenshot.size
+        scale_x = screenshot_width / 1280
+        scale_y = screenshot_height / 720
+        system_names = [
+            [(380, 330), "Weapons", (235, 650)],
+            [(270, 330), "Engines", (120, 650)],
+            [(265, 280), "Oxygen", (200, 650)],
+            [(510, 300), "Medbay", (165, 650)],
+            [(700, 325), "Piloting"],
+            [(510, 360), "Shields", (90, 650)],
+            [(585, 345), "Sensors"],
+            [(585, 310), "Doors"],
+        ]
         for room in rooms:
             for system in system_names:
-
-                if self._point_in_room(system[0], room):
+                system_pos = (int(system[0][0] * scale_x), int(system[0][1] * scale_y))
+                system_uipos = (int(system[2][0] * scale_x), int(system[2][1] * scale_y)) if len(system) == 3 else None
+                if self._point_in_room(system_pos, room):
                     print(f"System {system[1]} is in room {room}")
                     if len(system) == 3:
-                        self.systems.append(System(system[1], room, 0, system[0], system[2]))
+                        self.systems.append(System(system[1], room, 0, system_pos, system_uipos))
                     else:
-                        self.systems.append(System(system[1], room, 0, system[0]))
+                        self.systems.append(System(system[1], room, 0, system_pos))
 
         if DEBUG:
             # OpenCV drawing functions require a numpy image, not a PIL image.
@@ -87,8 +107,8 @@ class PlayerShip(Ship):
     def detect_weapons(self, screenshot, DEBUG=False):
         # For this version all weapons will be hardcoded
         weapons = [
-            Weapon("Artemis Missile", [300,650], 2, 11, 1, 5),
-            Weapon("Burst Laser Mk II", [400,650], 1, 12, 3)
+            Weapon("Artemis Missile", (300, 650), 2, 11, 1, 5),
+            Weapon("Burst Laser Mk II", (400, 650), 1, 12, 3)
         ]
         self.weapons = weapons
         return weapons
@@ -104,15 +124,18 @@ class PlayerShip(Ship):
 if __name__ == "__main__":
     print(gw.getAllTitles())
     player_ship = PlayerShip()
-    screenshot = player_ship.screenshot()
+    screenshot = player_ship.screenshot(DEBUG=True)
 
-    shield = player_ship.detect_shield(screenshot)
+    
+    shield = player_ship.detect_shield(screenshot, DEBUG=True)
     print(f"Shield: {shield}")
-    health = player_ship.detect_health(screenshot)
+    health = player_ship.detect_health(screenshot, DEBUG=True)
     print(f"Health: {health}")
-    rooms = player_ship.detect_rooms(screenshot)
+    
+
+    rooms = player_ship.detect_rooms(screenshot,DEBUG=True)
     print(f"Rooms: {rooms}")
-    player_ship.detect_system_power(screenshot)
-    print(f"Systems: {[(system.name, system.power) for system in player_ship.systems]}")
-    player_ship.reactor.refresh_power(screenshot)
-    print(f"Reactor power: {player_ship.reactor.available_power}")
+    #player_ship.detect_system_power(screenshot, DEBUG=True)
+    #print(f"Systems: {[(system.name, system.power) for system in player_ship.systems]}")
+    #player_ship.reactor.refresh_power(screenshot, DEBUG=True)
+    #print(f"Reactor power: {player_ship.reactor.available_power}")

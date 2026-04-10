@@ -6,8 +6,11 @@ from Model.PlayerShip import PlayerShip
 from mock import patch, MagicMock
 from PIL import Image
 import time
+import numpy as np
 
 RESIZED_FIXTURE = 'Test/Model/TestResizedWindow.png'
+RESIZED_TEST_TITLE_BAR = 45
+RESIZED_TEST_LEFT_BORDER = 8
 
 class TestPlayerShip(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
@@ -25,19 +28,11 @@ class TestPlayerShip(unittest.TestCase):
         self.player_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
         self.player_ship.WINDOW_LEFT_BORDER = 0  # Set left border to 0 for testing
 
-    @patch('Model.PlayerShip.pyautogui.screenshot')
-    def test_screenshot(self, mock_screenshot):
-        # Mock the screenshot function to return a dummy image
-        mock_screenshot.return_value = "dummy_screenshot"
-        screenshot = self.player_ship.screenshot()
-        self.assertEqual(screenshot, "dummy_screenshot")
-
-
     def test_detect_health(self):
         # Replace screenshot with a preset image TestImage1.jpg that has a known health bar state
         test_image = Image.open('Test/Model/TestImage1.jpg')
         
-        health = self.player_ship.detect_health(test_image)
+        health = self.player_ship.detect_health(test_image, DEBUG=True)
         # Assuming TestImage1.jpg has 25 hit points, we can assert that the detected health is correct
         self.assertEqual(health, 25)
         self.assertEqual(self.player_ship.health, 25)
@@ -78,32 +73,62 @@ class TestPlayerShip(unittest.TestCase):
         self.assertEqual(shield, 0)
         self.assertEqual(self.player_ship.shield, 0)
 
+    def test_detect_rooms_ignores_thin_internal_split_lines(self):
+        self.player_ship.ROOM_REGION = (0, 0, 200, 200)
+        test_image = Image.new('RGB', (200, 200), color='black')
+
+        # One room with a thin internal gap that should not split into two contours.
+        room_mask = np.zeros((200, 200), dtype=np.uint8)
+        room_mask[20:180, 20:180] = 255
+        room_mask[20:180, 100:102] = 0
+        self.player_ship.mask_region = MagicMock(return_value=room_mask)
+
+        rooms = self.player_ship.detect_rooms(test_image)
+
+        self.assertEqual(len(rooms), 1)
+        x, y, w, h = rooms[0]
+        self.assertTrue(x <= 20 and y <= 20)
+        self.assertTrue(w >= 155 and h >= 155)
+
 
 class TestPlayerShipResizedWindow(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
     @patch('Model.PlayerShip.gw.getWindowsWithTitle')
     def setUp(self, mock_get_windows, mock_screenshot):
-        # Mock resized FTL window to validate scaled-coordinate test fixtures.
+        # Use the resized fixture dimensions as the mocked window geometry.
+        with Image.open(RESIZED_FIXTURE) as fixture_image:
+            self.fixture_image = fixture_image.copy()
+        fixture_width, fixture_height = self.fixture_image.size
+
         mock_window = MagicMock()
-        mock_window.width = 1850
-        mock_window.height = 1087
+        mock_window.width = fixture_width
+        mock_window.height = fixture_height
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
 
+        def _mock_capture(region=None):
+            if region is None:
+                return self.fixture_image.copy()
+            left, top, width, height = region
+            return self.fixture_image.crop((left, top, left + width, top + height))
+
+        mock_screenshot.side_effect = _mock_capture
+
+        # screenshot() normalizes to 1280x720; use that output in assertions.
         self.player_ship = PlayerShip()
-        self.player_ship.TITLE_BAR_HEIGHT = 0
-        self.player_ship.WINDOW_LEFT_BORDER = 0
+        self.player_ship.TITLE_BAR_HEIGHT = RESIZED_TEST_TITLE_BAR
+        self.player_ship.WINDOW_LEFT_BORDER = RESIZED_TEST_LEFT_BORDER
+        self.test_image = self.player_ship.screenshot()
+
 
     def test_detect_health_resized_fixture(self):
-        test_image = Image.open(RESIZED_FIXTURE)
-        health = self.player_ship.detect_health(test_image)
+        health = self.player_ship.detect_health(self.test_image)
         self.assertEqual(health, 30)
         self.assertEqual(self.player_ship.health, 30)
 
     def test_detect_shield_resized_fixture(self):
-        test_image = Image.open(RESIZED_FIXTURE)
-        shield = self.player_ship.detect_shield(test_image)
+        shield = self.player_ship.detect_shield(self.test_image)
         self.assertEqual(shield, 1)
         self.assertEqual(self.player_ship.shield, 1)
 
