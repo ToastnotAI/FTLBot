@@ -10,6 +10,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from Model.PlayerShip import PlayerShip
 from Model.Systems import System, Weapon, Reactor
 
+RESIZED_FIXTURE = 'Test/Model/TestResizedWindow.png'
+
 class TestPlayerShipWeapons(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
     @patch('Model.PlayerShip.gw.getWindowsWithTitle')
@@ -68,3 +70,47 @@ class TestReactor(unittest.TestCase):
         test_image = Image.open('Test/Model/TestImage1.jpg')
         self.reactor.refresh_power(test_image)
         self.assertEqual(self.reactor.available_power, 1)
+
+
+class TestSystemPowerResizedWindow(unittest.TestCase):
+    @patch('Model.PlayerShip.pyautogui.screenshot')
+    @patch('Model.PlayerShip.gw.getWindowsWithTitle')
+    def setUp(self, mock_get_windows, mock_screenshot):
+        mock_window = MagicMock()
+        mock_window.width = 1850
+        mock_window.height = 1087
+        mock_window.left = 0
+        mock_window.top = 0
+        mock_get_windows.return_value = [mock_window]
+
+        self.player_ship = PlayerShip()
+        self.player_ship.TITLE_BAR_HEIGHT = 0
+        self.player_ship.WINDOW_LEFT_BORDER = 0
+
+    def test_detect_system_power_resized_fixture(self):
+        test_image = Image.open(RESIZED_FIXTURE)
+
+        self.player_ship.detect_rooms(test_image)
+        self.player_ship.detect_system_power(test_image)
+
+        power_by_name = {
+            system.name: system.power
+            for system in self.player_ship.systems
+            if system.uipos
+        }
+
+        expected_power = {
+            'Shields': 2,
+            'Engines': 1,
+            'Medbay': 1,
+            'Oxygen': 1,
+            'Weapons': 0,
+        }
+
+        required_systems = set(expected_power.keys())
+        self.assertTrue(required_systems.issubset(set(power_by_name.keys())))
+        self.assertEqual(power_by_name['Shields'], 2)
+        self.assertEqual(power_by_name['Engines'], 1)
+        self.assertEqual(power_by_name['Medbay'], 1)
+        self.assertEqual(power_by_name['Oxygen'], 1)
+        self.assertEqual(power_by_name['Weapons'], 0)
