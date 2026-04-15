@@ -72,8 +72,9 @@ class Weapon():
         self.is_enabled = is_enabled
         self.last_fired = 0
 
-    def can_fire(self, cooldown_multiplier = 1):
-        current_time = time.time()
+    def can_fire(self, current_time = None, cooldown_multiplier = 1):
+        if current_time is None:
+            current_time = time.time()
         return ((current_time - self.last_fired) >= (self.base_cooldown * cooldown_multiplier)) and self.is_enabled
 
     def fired(self):

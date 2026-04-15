@@ -115,7 +115,7 @@ class Ship(Masker):
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             
-                
+        self.rooms = rooms        
         
         return rooms
         

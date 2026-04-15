@@ -101,7 +101,7 @@ class PlayerShip(Ship):
                     cv2.line(debug_image, tuple(system.pos), tuple(system.uipos), (255, 0, 0), 1)
             cv2.imshow("Rooms with Systems", debug_image)
             cv2.waitKey(0)
-
+        self.rooms = rooms
         return rooms
 
     def detect_weapons(self, screenshot, DEBUG=False):
@@ -118,6 +118,14 @@ class PlayerShip(Ship):
             if system.uipos:
                 system.power = system.get_power(screenshot, DEBUG=DEBUG)
                 print(f"{system.name} power: {system.power}")
+
+    def full_scan(self, screenshot, DEBUG=False):
+        self.detect_rooms(screenshot, DEBUG=DEBUG)
+        self.detect_system_power(screenshot, DEBUG=DEBUG)
+        self.detect_weapons(screenshot, DEBUG=DEBUG)
+        self.detect_health(screenshot, DEBUG=DEBUG)
+        self.detect_shield(screenshot, DEBUG=DEBUG)
+
 
 
 

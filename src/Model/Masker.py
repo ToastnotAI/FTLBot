@@ -159,9 +159,11 @@ class Masker():
         mask = cv2.inRange(image_array, lower_bound, upper_bound)
         return mask
 
+
+    # TODO: Factor rooms with lower oxygen values going red
+    
     def room_mask(self, enemy_ship_image, DEBUG=False):
         # Ship interiors can be white/black/grey depending on vision and lighting.
-        # Keep these ranges very tight around exact target colours from comments.
         # White: #e6e2db -> HSV [19, 12, 230]
         lower_white = np.array([18, 9, 227])
         upper_white = np.array([20, 15, 233])
