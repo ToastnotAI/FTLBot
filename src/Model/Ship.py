@@ -9,6 +9,14 @@ except ImportError:
     from Masker import Masker
 
 
+class Room():
+    def __init__(self, bounds):
+        self.bounds = bounds
+        x, y, width, height = bounds
+        # Use rounded half-width/height so odd-sized rooms center more accurately.
+        self.pos = (int(round(x + width / 2)), int(round(y + height / 2)))
+        
+
 
 class Ship(Masker): 
 
@@ -107,7 +115,7 @@ class Ship(Masker):
             x += self.ROOM_REGION[0]
             y += self.ROOM_REGION[1]
             if w > 20 and h > 20:  # These thresholds may need to be adjusted based on the actual sizes of rooms in the game
-                rooms.append((x, y, w, h))
+                rooms.append(Room((x, y, w, h)))
                 if DEBUG:
                     cv2.rectangle(debug_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
         if DEBUG:

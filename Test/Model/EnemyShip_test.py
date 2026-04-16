@@ -36,7 +36,7 @@ class TestEnemyShip(unittest.TestCase):
 
     def test_detect_shield(self):
         test_image = Image.open('Test/Model/TestImage2.png')
-        shield = self.enemy_ship.detect_shield(test_image, DEBUG=True)
+        shield = self.enemy_ship.detect_shield(test_image)
         # Assuming TestImage2.png has 3 shield points for the enemy ship, we can assert that the detected shield is correct
         self.assertEqual(shield, 3)
         self.assertEqual(self.enemy_ship.shield, 3)

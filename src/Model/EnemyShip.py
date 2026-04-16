@@ -23,6 +23,11 @@ class EnemyShip(Ship):
         self.SHIELD_BAR_REGION = self.rescale_region(self._shield_bar_base_region)
         self.ROOM_REGION = self.rescale_region(self._room_base_region)
 
+    def full_scan(self, screenshot):
+        self.detect_health(screenshot)
+        self.detect_shield(screenshot)
+        self.detect_rooms(screenshot)
+
 
 
 

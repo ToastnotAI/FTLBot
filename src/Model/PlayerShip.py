@@ -52,7 +52,8 @@ class PlayerShip(Ship):
                     return np.zeros((health_bar_image.height, health_bar_image.width), dtype=np.uint8)
         return mask
 
-    def _point_in_room(self, point, polygon):
+    def _point_in_room(self, point, room):
+        polygon = room.bounds
         x1, y1 = point
         x2, y2, xoffset, yoffset = polygon
 
@@ -64,10 +65,6 @@ class PlayerShip(Ship):
     def detect_rooms(self, screenshot, DEBUG=False):
         rooms = super().detect_rooms(screenshot, DEBUG)
         print("Rooms:", rooms)
-        # Scale system anchors from base 1280x720 using the actual screenshot size.
-        screenshot_width, screenshot_height = screenshot.size
-        scale_x = screenshot_width / 1280
-        scale_y = screenshot_height / 720
         system_names = [
             [(380, 330), "Weapons", (235, 650)],
             [(270, 330), "Engines", (120, 650)],
@@ -80,8 +77,8 @@ class PlayerShip(Ship):
         ]
         for room in rooms:
             for system in system_names:
-                system_pos = (int(system[0][0] * scale_x), int(system[0][1] * scale_y))
-                system_uipos = (int(system[2][0] * scale_x), int(system[2][1] * scale_y)) if len(system) == 3 else None
+                system_pos = (int(system[0][0] * self.scale_x), int(system[0][1] * self.scale_y))
+                system_uipos = (int(system[2][0] * self.scale_x), int(system[2][1] * self.scale_y)) if len(system) == 3 else None
                 if self._point_in_room(system_pos, room):
                     print(f"System {system[1]} is in room {room}")
                     if len(system) == 3:
@@ -107,8 +104,8 @@ class PlayerShip(Ship):
     def detect_weapons(self, screenshot, DEBUG=False):
         # For this version all weapons will be hardcoded
         weapons = [
-            Weapon("Artemis Missile", (300, 650), 2, 11, 1, 5),
-            Weapon("Burst Laser Mk II", (400, 650), 1, 12, 3)
+            Weapon("Artemis Missile", (int(300 * self.scale_x), int(650 * self.scale_y)), 2, 11, 1, 5),
+            Weapon("Burst Laser Mk II", (int(400 * self.scale_x), int(650 * self.scale_y)), 1, 12, 3)
         ]
         self.weapons = weapons
         return weapons

@@ -32,7 +32,7 @@ class TestPlayerShip(unittest.TestCase):
         # Replace screenshot with a preset image TestImage1.jpg that has a known health bar state
         test_image = Image.open('Test/Model/TestImage1.jpg')
         
-        health = self.player_ship.detect_health(test_image, DEBUG=True)
+        health = self.player_ship.detect_health(test_image  )
         # Assuming TestImage1.jpg has 25 hit points, we can assert that the detected health is correct
         self.assertEqual(health, 25)
         self.assertEqual(self.player_ship.health, 25)
@@ -86,13 +86,13 @@ class TestPlayerShip(unittest.TestCase):
         rooms = self.player_ship.detect_rooms(test_image)
 
         self.assertEqual(len(rooms), 1)
-        x, y, w, h = rooms[0]
+        x, y, w, h = rooms[0].bounds
         self.assertTrue(x <= 20 and y <= 20)
         self.assertTrue(w >= 155 and h >= 155)
 
     def test_detect_rooms_detects_correct_amount_of_rooms(self):
         test_image = Image.open('Test/Model/TestYellowBar.png')
-        rooms = self.player_ship.detect_rooms(test_image, DEBUG=True)
+        rooms = self.player_ship.detect_rooms(test_image)
         # Assuming TestYellowBar.png has 19 rooms, we can assert that the detected rooms are correct
         self.assertEqual(len(rooms), 19)
 
