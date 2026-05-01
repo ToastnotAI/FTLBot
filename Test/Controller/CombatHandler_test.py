@@ -22,6 +22,20 @@ class StubWeapon:
 
 class TestCombatHandler(unittest.TestCase):
     def setUp(self):
+        self._get_windows_patcher = patch('Interface.Interface.gw.getWindowsWithTitle')
+        self.mock_get_windows = self._get_windows_patcher.start()
+
+        mock_window = MagicMock()
+        mock_window.width = 1280
+        mock_window.height = 720
+        mock_window.left = 0
+        mock_window.top = 0
+        mock_window.right = 1280
+        mock_window.bottom = 720
+        mock_window.activate = MagicMock()
+        mock_window.isMinimized = False
+        self.mock_get_windows.return_value = [mock_window]
+
         self.player_ship = MagicMock()
         self.hostile_ship = MagicMock()
 
@@ -38,6 +52,9 @@ class TestCombatHandler(unittest.TestCase):
         self.player_ship.detect_shield.return_value = 2
         self.hostile_ship.detect_health.return_value = 12
         self.hostile_ship.detect_shield.return_value = 1
+
+    def tearDown(self):
+        self._get_windows_patcher.stop()
 
     @patch('Controller.CombatHandler.time.time', return_value=100.0)
     def test_init_scans_both_ships_and_starts_paused(self, mock_time):

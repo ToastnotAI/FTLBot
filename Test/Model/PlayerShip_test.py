@@ -14,8 +14,9 @@ RESIZED_TEST_LEFT_BORDER = 8
 
 class TestPlayerShip(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
+    @patch('Model.Masker.gw.getWindowsWithTitle')
     @patch('Model.PlayerShip.gw.getWindowsWithTitle')
-    def setUp(self, mock_get_windows, mock_screenshot):
+    def setUp(self, mock_get_windows, mock_masker_get_windows, mock_screenshot):
         # Mock the FTL window
         mock_window = MagicMock()
         mock_window.width = 1280
@@ -23,6 +24,7 @@ class TestPlayerShip(unittest.TestCase):
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
+        mock_masker_get_windows.return_value = [mock_window]
 
         self.player_ship = PlayerShip()
         self.player_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
@@ -73,7 +75,15 @@ class TestPlayerShip(unittest.TestCase):
         self.assertEqual(shield, 0)
         self.assertEqual(self.player_ship.shield, 0)
 
-    def test_detect_rooms_ignores_thin_internal_split_lines(self):
+    @patch('Model.Masker.gw.getWindowsWithTitle')
+    def test_detect_rooms_ignores_thin_internal_split_lines(self, mock_masker_get_windows):
+        mock_window = MagicMock()
+        mock_window.width = 1280
+        mock_window.height = 720
+        mock_window.left = 0
+        mock_window.top = 0
+        mock_masker_get_windows.return_value = [mock_window]
+
         self.player_ship.ROOM_REGION = (0, 0, 200, 200)
         test_image = Image.new('RGB', (200, 200), color='black')
 
@@ -90,7 +100,15 @@ class TestPlayerShip(unittest.TestCase):
         self.assertTrue(x <= 20 and y <= 20)
         self.assertTrue(w >= 155 and h >= 155)
 
-    def test_detect_rooms_detects_correct_amount_of_rooms(self):
+    @patch('Model.Masker.gw.getWindowsWithTitle')
+    def test_detect_rooms_detects_correct_amount_of_rooms(self, mock_masker_get_windows):
+        mock_window = MagicMock()
+        mock_window.width = 1280
+        mock_window.height = 720
+        mock_window.left = 0
+        mock_window.top = 0
+        mock_masker_get_windows.return_value = [mock_window]
+
         test_image = Image.open('Test/Model/TestYellowBar.png')
         rooms = self.player_ship.detect_rooms(test_image)
         # Assuming TestYellowBar.png has 19 rooms, we can assert that the detected rooms are correct
@@ -100,8 +118,9 @@ class TestPlayerShip(unittest.TestCase):
 
 class TestPlayerShipResizedWindow(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
+    @patch('Model.Masker.gw.getWindowsWithTitle')
     @patch('Model.PlayerShip.gw.getWindowsWithTitle')
-    def setUp(self, mock_get_windows, mock_screenshot):
+    def setUp(self, mock_get_windows, mock_masker_get_windows, mock_screenshot):
         # Use the resized fixture dimensions as the mocked window geometry.
         with Image.open(RESIZED_FIXTURE) as fixture_image:
             self.fixture_image = fixture_image.copy()
@@ -113,6 +132,7 @@ class TestPlayerShipResizedWindow(unittest.TestCase):
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
+        mock_masker_get_windows.return_value = [mock_window]
 
         def _mock_capture(region=None):
             if region is None:
@@ -139,7 +159,16 @@ class TestPlayerShipResizedWindow(unittest.TestCase):
         self.assertEqual(shield, 1)
         self.assertEqual(self.player_ship.shield, 1)
 
-    def test_detect_rooms_detects_correct_amount_of_rooms_in_resized_fixture(self):
+    
+    @patch('Model.Masker.gw.getWindowsWithTitle')
+    def test_detect_rooms_detects_correct_amount_of_rooms_in_resized_fixture(self, mock_masker_get_windows):
+        mock_window = MagicMock()
+        mock_window.width = self.fixture_image.size[0]
+        mock_window.height = self.fixture_image.size[1]
+        mock_window.left = 0
+        mock_window.top = 0
+        mock_masker_get_windows.return_value = [mock_window]
+
         test_image = self.test_image
         rooms = self.player_ship.detect_rooms(test_image)
         # Assuming the resized fixture has 17 rooms, we can assert that the detected rooms are correct

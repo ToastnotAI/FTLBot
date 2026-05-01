@@ -16,8 +16,9 @@ RESIZED_TEST_LEFT_BORDER = 8
 
 class TestPlayerShipWeapons(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
+    @patch('Model.Masker.gw.getWindowsWithTitle')
     @patch('Model.PlayerShip.gw.getWindowsWithTitle')
-    def setUp(self, mock_get_windows, mock_screenshot):
+    def setUp(self, mock_get_windows, mock_masker_get_windows, mock_screenshot):
         # Mock the FTL window
         mock_window = MagicMock()
         mock_window.width = 1280
@@ -25,6 +26,7 @@ class TestPlayerShipWeapons(unittest.TestCase):
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
+        mock_masker_get_windows.return_value = [mock_window]
 
         self.player_ship = PlayerShip()
         self.player_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
@@ -52,8 +54,9 @@ class TestPlayerShipWeapons(unittest.TestCase):
 
 class TestReactor(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
+    @patch('Model.Masker.gw.getWindowsWithTitle')
     @patch('Model.PlayerShip.gw.getWindowsWithTitle')
-    def setUp(self, mock_get_windows, mock_screenshot):
+    def setUp(self, mock_get_windows, mock_masker_get_windows, mock_screenshot):
         # Mock the FTL window
         mock_window = MagicMock()
         mock_window.width = 1280
@@ -61,6 +64,7 @@ class TestReactor(unittest.TestCase):
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
+        mock_masker_get_windows.return_value = [mock_window]
 
         self.reactor = Reactor(8)
 
@@ -76,8 +80,9 @@ class TestReactor(unittest.TestCase):
 
 class TestSystemPowerResizedWindow(unittest.TestCase):
     @patch('Model.PlayerShip.pyautogui.screenshot')
+    @patch('Model.Masker.gw.getWindowsWithTitle')
     @patch('Model.PlayerShip.gw.getWindowsWithTitle')
-    def setUp(self, mock_get_windows, mock_screenshot):
+    def setUp(self, mock_get_windows, mock_masker_get_windows, mock_screenshot):
         with Image.open(RESIZED_FIXTURE) as fixture_image:
             self.fixture_image = fixture_image.copy()
         fixture_width, fixture_height = self.fixture_image.size
@@ -88,6 +93,7 @@ class TestSystemPowerResizedWindow(unittest.TestCase):
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
+        mock_masker_get_windows.return_value = [mock_window]
 
         def _mock_capture(region=None):
             if region is None:
@@ -102,7 +108,14 @@ class TestSystemPowerResizedWindow(unittest.TestCase):
         self.player_ship.WINDOW_LEFT_BORDER = RESIZED_TEST_LEFT_BORDER
         self.test_image = self.player_ship.screenshot()
 
-    def test_detect_system_power_resized_fixture(self):
+    @patch('Model.Masker.gw.getWindowsWithTitle')
+    def test_detect_system_power_resized_fixture(self, mock_masker_get_windows):
+        mock_window = MagicMock()
+        mock_window.width = self.fixture_image.size[0]
+        mock_window.height = self.fixture_image.size[1]
+        mock_window.left = 0
+        mock_window.top = 0
+        mock_masker_get_windows.return_value = [mock_window]
 
         self.player_ship.detect_rooms(self.test_image)
         self.player_ship.detect_system_power(self.test_image)

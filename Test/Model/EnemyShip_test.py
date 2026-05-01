@@ -3,6 +3,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 from Model.EnemyShip import EnemyShip
+from Model.Ship import Room
 from unittest.mock import patch, MagicMock
 from PIL import Image
 
@@ -12,8 +13,10 @@ RESIZED_TEST_LEFT_BORDER = 8
 
 class TestEnemyShip(unittest.TestCase):
     @patch('Model.EnemyShip.pyautogui.screenshot')
+    @patch('Model.Masker.gw.getWindowsWithTitle')
     @patch('Model.EnemyShip.gw.getWindowsWithTitle')
-    def setUp(self, mock_get_windows, mock_screenshot):
+    @patch('Model.EnemyShip.MouseInterface')
+    def setUp(self, mock_mouse_interface, mock_get_windows, mock_masker_get_windows, mock_screenshot):
         # Mock the FTL window
         mock_window = MagicMock()
         mock_window.width = 1280
@@ -21,6 +24,7 @@ class TestEnemyShip(unittest.TestCase):
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
+        mock_masker_get_windows.return_value = [mock_window]
 
         self.enemy_ship = EnemyShip()
         self.enemy_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
@@ -49,10 +53,54 @@ class TestEnemyShip(unittest.TestCase):
         self.assertEqual(self.enemy_ship.shield, 0)
 
 
+class TestEnemyShipSystems(unittest.TestCase):
+    @patch('Model.EnemyShip.pyautogui.screenshot')
+    @patch('Model.Masker.gw.getWindowsWithTitle')
+    @patch('Model.EnemyShip.gw.getWindowsWithTitle')
+    @patch('Model.EnemyShip.MouseInterface')
+    def setUp(self, mock_mouse_interface, mock_get_windows, mock_masker_get_windows, mock_screenshot):
+        # Mock the FTL window
+        mock_window = MagicMock()
+        mock_window.width = 1280
+        mock_window.height = 720
+        mock_window.left = 0
+        mock_window.top = 0
+        mock_get_windows.return_value = [mock_window]
+        mock_masker_get_windows.return_value = [mock_window]
+
+        self.enemy_ship = EnemyShip()
+        self.enemy_ship.TITLE_BAR_HEIGHT = 0  # Set title bar height to 0 for testing
+        self.enemy_ship.WINDOW_LEFT_BORDER = 0  # Set left border to 0 for testing
+
+    def test_detect_system_status_all_green(self):
+        test_image = Image.open('Test/Model/EnemyShipSystem.jpg')
+        self.enemy_ship.detect_rooms(test_image)
+        self.enemy_ship.systems.identify_system_status_and_position(test_image, DEBUG=True)
+        # Assuming EnemyShipSystem.jpg has 5 systems with green status, we can assert that the detected system statuses are correct
+        for system in self.enemy_ship.systems:
+            self.assertEqual(system["status"], 'green')
+            print(system)
+        self.assertEqual(len(self.enemy_ship.systems), 5)
+
+    # Additional tests for different system statuses (yellow, red) can be added similarly by using different test images with known system states.
+
+    def test_locate_system_room(self):
+        self.enemy_ship.systems.systems = [
+            {"name": "Weapons", "status": "green", "position": (100, 100)}
+        ]
+        self.enemy_ship.rooms = [Room((50,50, 150, 150))]
+        # patch screenshot to return a specific image 
+        with patch.object(self.enemy_ship, 'screenshot', return_value=Image.open('Test/Model/MockedWeaponsText.png')):
+            self.enemy_ship.systems.identify_system_names(self.enemy_ship.rooms)
+            self.assertEqual(self.enemy_ship.systems.systems[0]["name"], "Weapons")
+
+
+
 class TestEnemyShipResizedWindow(unittest.TestCase):
     @patch('Model.EnemyShip.pyautogui.screenshot')
+    @patch('Model.Masker.gw.getWindowsWithTitle')
     @patch('Model.EnemyShip.gw.getWindowsWithTitle')
-    def setUp(self, mock_get_windows, mock_screenshot):
+    def setUp(self, mock_get_windows, mock_masker_get_windows, mock_screenshot):
         # Use the resized fixture dimensions as the mocked window geometry.
         with Image.open(RESIZED_FIXTURE) as fixture_image:
             self.fixture_image = fixture_image.copy()
@@ -64,6 +112,7 @@ class TestEnemyShipResizedWindow(unittest.TestCase):
         mock_window.left = 0
         mock_window.top = 0
         mock_get_windows.return_value = [mock_window]
+        mock_masker_get_windows.return_value = [mock_window]
 
         def _mock_capture(region=None):
             if region is None:

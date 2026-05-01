@@ -58,3 +58,13 @@ class MouseInterface(Interface):
             pyautogui.click(*click_pos)
         else:
             raise ValueError(f"Click position ({x}, {y}) is outside the bounds of the FTL window.")
+
+    def move_to(self, x, y):
+        self._activate_ftl_window()
+        self.refresh_bounds()
+        client_left, client_top = self._get_client_origin()
+        move_pos = (x + client_left, y + client_top)
+        if self.left_bound <= move_pos[0] <= self.right_bound and self.top_bound <= move_pos[1] <= self.bottom_bound:
+            pyautogui.moveTo(move_pos)
+        else:
+            raise ValueError(f"Move position ({x}, {y}) is outside the bounds of the FTL window.")
